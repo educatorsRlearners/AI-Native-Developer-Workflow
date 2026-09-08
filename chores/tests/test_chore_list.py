@@ -9,6 +9,18 @@ from chores.models import Chore, Completion, Person
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def signed_in(client):
+    """The chore list is gated by ``require_person``; sign a person in."""
+    person = Person.objects.create(
+        name="Viewer", email="viewer@example.com", pin_hash="!"
+    )
+    session = client.session
+    session["person_id"] = person.id
+    session.save()
+    return person
+
+
 def make_person(name, email=None):
     return Person.objects.create(
         name=name, email=email or f"{name.lower()}@example.com", pin_hash="!"
@@ -92,8 +104,11 @@ def test_no_interactivity(client):
 
     resp = client.get(reverse("chores:list"))
     body = resp.content.decode()
-    assert "<form" not in body
-    assert "<button" not in body
+    # The chore list itself is read-only. The page chrome (header) may carry a
+    # sign-out form (issue #7), so scope this to <main>.
+    main = body.split("<main>", 1)[1].split("</main>", 1)[0]
+    assert "<form" not in main
+    assert "<button" not in main
     assert "<script" not in body
 
 
