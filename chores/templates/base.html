@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Chores{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'chores/chores.css' %}">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#4a6fa5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="{% static 'chores/icons/apple-touch-icon-180.png' %}">
 </head>
 <body>
   <header>
@@ -25,5 +30,15 @@
   <footer>
     <p>Household chore tool</p>
   </footer>
+  <script>
+    // Register the hand-written service worker once the page has loaded.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function (err) {
+          console.error('Service worker registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>

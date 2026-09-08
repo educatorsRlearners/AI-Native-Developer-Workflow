@@ -109,7 +109,11 @@ def test_no_interactivity(client):
     main = body.split("<main>", 1)[1].split("</main>", 1)[0]
     assert "<form" not in main
     assert "<button" not in main
-    assert "<script" not in body
+    assert "<script" not in main
+    # base.html carries exactly one <script>: the service-worker registration
+    # (issue #8). No other interactivity on the page.
+    assert body.count("<script") == 1
+    assert "navigator.serviceWorker.register('/sw.js')" in body
 
 
 def test_never_completed_shows_never(client):

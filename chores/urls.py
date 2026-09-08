@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.chore_list, name="list"),
     path("login/", views.login, name="login"),
     path("logout/", views.logout, name="logout"),
+    path("offline/", views.offline, name="offline"),
 ]
