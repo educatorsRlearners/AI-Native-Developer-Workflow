@@ -23,6 +23,36 @@ class Person(models.Model):
         return self.name
 
 
+class PushSubscription(models.Model):
+    """One browser's Web Push subscription, owned by the current person.
+
+    Rows are created by the browser (see ``chores/static/chores/push.js`` and
+    the ``chores:push-subscribe`` endpoint), never by hand. ``endpoint`` is
+    globally unique -- the same browser re-subscribing upserts this row rather
+    than adding a second one.
+    """
+
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name="push_subscriptions",
+    )
+    endpoint = models.TextField(unique=True)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    user_agent = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def _endpoint_host(self):
+        from urllib.parse import urlparse
+
+        return urlparse(self.endpoint).netloc or self.endpoint[:40]
+
+    def __str__(self):
+        return f"{self.person.name} @ {self._endpoint_host()}"
+
+
 class Chore(models.Model):
     class Cadence(models.TextChoices):
         DAILY = "DAILY", "Daily"

@@ -139,6 +139,18 @@ EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='chores@localhost')
 
 
+# Web Push (VAPID)
+# https://datatracker.ietf.org/doc/html/rfc8292
+# Generate a keypair once with a throwaway tool (never added to pyproject.toml)
+# -- see _docs/push.md. All three default to empty strings so runserver and the
+# test suite start without them set; no push is actually sent in this codebase
+# yet (that arrives in #11).
+
+VAPID_PUBLIC_KEY = env('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = env('VAPID_PRIVATE_KEY', default='')
+VAPID_ADMIN_EMAIL = env('VAPID_ADMIN_EMAIL', default='')
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 

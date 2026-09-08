@@ -9,4 +9,6 @@ urlpatterns = [
     path("login/", views.login, name="login"),
     path("logout/", views.logout, name="logout"),
     path("offline/", views.offline, name="offline"),
+    path("settings/", views.settings_view, name="settings"),
+    path("push/subscribe/", views.push_subscribe, name="push-subscribe"),
 ]

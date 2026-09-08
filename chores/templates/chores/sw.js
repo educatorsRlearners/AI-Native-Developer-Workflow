@@ -13,6 +13,10 @@ const RUNTIME_CACHE = "chores-runtime-" + CACHE_VERSION;
 
 const OFFLINE_URL = "{% url 'chores:offline' %}";
 
+// Notification assets -- already committed and precached by #8, no remote fetch.
+const NOTIFICATION_ICON = "{% static 'chores/icons/icon-192.png' %}";
+const NOTIFICATION_BADGE = "{% static 'chores/icons/icon-192-maskable.png' %}";
+
 // App-shell asset list. HTMX (#6) is included by the server only if a
 // vendored file is committed; if it is absent, install still succeeds.
 const PRECACHE_URLS = {{ precache_urls|safe }};
@@ -80,4 +84,59 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Everything else falls through to the network, uncached.
+});
+
+// --- Web push (#9) --------------------------------------------------------
+//
+// No push is sent from the server yet (#11). These handlers just prove the
+// browser-side plumbing: show a notification when one arrives, and focus or
+// open the app when it is clicked. They do not touch the caches above, so the
+// #8 CACHE_VERSION behaviour is unchanged (the version bump in this change is
+// only because sw.js itself changed).
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch (err) {
+      payload = { body: event.data.text() };
+    }
+  }
+
+  const title = payload.title || "Household Chores";
+  const body = payload.body || "You have a chore that needs doing.";
+  const url = payload.url || "/";
+  const icon = payload.icon || NOTIFICATION_ICON;
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      badge: NOTIFICATION_BADGE,
+      data: { url },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const data = event.notification.data || {};
+  const targetUrl = data.url || "/";
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        for (const client of windowClients) {
+          const clientUrl = new URL(client.url);
+          // Scope is "/", so any same-origin window is within scope.
+          if (clientUrl.origin === self.location.origin && "focus" in client) {
+            return client.focus();
+          }
+        }
+        return clients.openWindow(targetUrl);
+      })
+  );
 });

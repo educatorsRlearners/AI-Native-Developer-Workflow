@@ -44,6 +44,10 @@ If the service worker has never installed (brand-new device, never opened the
 app online), an offline visit shows the browser's own offline error page. This
 is expected and is not worked around -- there is nothing cached yet.
 
+**#9 bumped `CACHE_VERSION` `v1` -> `v2`** because it added `push` and
+`notificationclick` listeners to `sw.js`. The caching strategy above is
+unchanged; the bump is only there because `sw.js` is a byte different.
+
 ## iOS constraints (groundwork for #9 web push)
 
 - Web push on iOS Safari (#9) works **only** after the user adds the PWA to the

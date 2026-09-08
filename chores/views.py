@@ -9,7 +9,7 @@ import json
 
 from django.conf import settings
 from django.contrib.auth.hashers import is_password_usable
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -19,7 +19,7 @@ from django.views.decorators.http import require_POST
 
 from chores import recurrence
 from chores.auth import get_current_person, require_person
-from chores.models import Chore, Completion, Person
+from chores.models import Chore, Completion, Person, PushSubscription
 from chores.services import last_completed_on
 
 RECENT_ACTIVITY_LIMIT = 10
@@ -30,7 +30,7 @@ RECENT_ACTIVITY_LIMIT = 10
 # (chores.css, the offline page, the icons, a vendored HTMX file, or sw.js
 # itself). Django serves these at stable, non-hashed URLs, so a cache-first
 # service worker would otherwise keep serving the stale copy forever.
-CACHE_VERSION = "v1"
+CACHE_VERSION = "v2"
 
 THEME_COLOR = "#4a6fa5"
 BACKGROUND_COLOR = "#ffffff"
@@ -199,6 +199,62 @@ def _build_row(chore, today):
             else None
         ),
     }
+
+
+# --- Web push subscription flow (#9) --------------------------------------
+
+
+@require_person
+def settings_view(request):
+    """Settings page: enable browser notifications for this device."""
+    return render(
+        request,
+        "chores/settings.html",
+        {"vapid_public_key": settings.VAPID_PUBLIC_KEY},
+    )
+
+
+@require_POST
+@require_person
+def push_subscribe(request):
+    """Upsert the current person's Web Push subscription, keyed by endpoint.
+
+    ``require_POST`` is outermost so ``GET``/``PUT``/``DELETE`` get a 405
+    regardless of auth; an unauthenticated ``POST`` falls through to
+    ``require_person`` and is redirected to the sign-in page.
+    """
+    try:
+        payload = json.loads(request.body)
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "body is not valid JSON"}, status=400)
+
+    if not isinstance(payload, dict):
+        return JsonResponse({"error": "expected a JSON object"}, status=400)
+
+    endpoint = payload.get("endpoint")
+    keys = payload.get("keys") or {}
+    p256dh = keys.get("p256dh") if isinstance(keys, dict) else None
+    auth = keys.get("auth") if isinstance(keys, dict) else None
+    if not endpoint or not p256dh or not auth:
+        return JsonResponse(
+            {"error": "endpoint, keys.p256dh and keys.auth are required"},
+            status=400,
+        )
+
+    person = get_current_person(request)
+    user_agent = request.META.get("HTTP_USER_AGENT", "")[:255]
+
+    _, created = PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={
+            "person": person,
+            "p256dh": p256dh[:255],
+            "auth": auth[:255],
+            "user_agent": user_agent,
+        },
+    )
+    status = "created" if created else "updated"
+    return JsonResponse({"status": status}, status=201 if created else 200)
 
 
 @require_person

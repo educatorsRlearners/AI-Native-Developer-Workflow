@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from chores.models import Chore, Completion, Person
+from chores.models import Chore, Completion, Person, PushSubscription
 
 
 @admin.register(Person)
@@ -13,6 +13,29 @@ class PersonAdmin(admin.ModelAdmin):
 class ChoreAdmin(admin.ModelAdmin):
     list_display = ("title", "owner", "cadence", "anchor_date", "claimed_by")
     list_filter = ("owner", "cadence")
+
+
+@admin.register(PushSubscription)
+class PushSubscriptionAdmin(admin.ModelAdmin):
+    """Read-only: subscriptions are created by the browser, not by hand."""
+
+    list_display = ("person", "user_agent", "created_at", "updated_at")
+    list_filter = ("person",)
+    readonly_fields = (
+        "person",
+        "endpoint",
+        "p256dh",
+        "auth",
+        "user_agent",
+        "created_at",
+        "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Completion)

@@ -16,6 +16,7 @@
     <h1>Household Chores</h1>
     {% if current_person %}
       <span class="current-person">{{ current_person.name }}</span>
+      <a href="{% url 'chores:settings' %}" class="settings-link">Settings</a>
       <form method="post" action="{% url 'chores:logout' %}" class="sign-out">
         {% csrf_token %}
         <button type="submit">Sign out</button>
