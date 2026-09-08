@@ -12,23 +12,30 @@
   <link rel="apple-touch-icon" href="{% static 'chores/icons/apple-touch-icon-180.png' %}">
 </head>
 <body>
-  <header>
-    <h1>Household Chores</h1>
-    {% if current_person %}
-      <span class="current-person">{{ current_person.name }}</span>
-      <a href="{% url 'chores:settings' %}" class="settings-link">Settings</a>
-      <form method="post" action="{% url 'chores:logout' %}" class="sign-out">
-        {% csrf_token %}
-        <button type="submit">Sign out</button>
-      </form>
-    {% else %}
-      <a href="{% url 'chores:login' %}" class="sign-in-link">Sign in</a>
-    {% endif %}
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="{% url 'chores:list' %}">
+        <span class="brand-mark" aria-hidden="true">🧹</span>
+        <span class="brand-name">Household Chores</span>
+      </a>
+      <nav class="site-nav">
+        {% if current_person %}
+          <span class="current-person" title="Signed in">{{ current_person.name }}</span>
+          <a href="{% url 'chores:settings' %}" class="btn btn-ghost settings-link">Settings</a>
+          <form method="post" action="{% url 'chores:logout' %}" class="sign-out">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost">Sign out</button>
+          </form>
+        {% else %}
+          <a href="{% url 'chores:login' %}" class="btn btn-primary sign-in-link">Sign in</a>
+        {% endif %}
+      </nav>
+    </div>
   </header>
   <main>
     {% block content %}{% endblock %}
   </main>
-  <footer>
+  <footer class="site-footer">
     <p>Household chore tool</p>
   </footer>
   <script>
