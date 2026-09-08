@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <p>Hi {{ person.name }},</p>
+    <p>These chores need doing:</p>
+    <ul>
+      {% for chore in chores %}
+      <li>{{ chore.title }} &mdash; next due {{ chore.next_due|date:"Y-m-d" }}</li>
+      {% endfor %}
+    </ul>
+    <p>Thanks,<br>The chores robot</p>
+  </body>
+</html>
