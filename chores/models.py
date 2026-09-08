@@ -53,6 +53,45 @@ class PushSubscription(models.Model):
         return f"{self.person.name} @ {self._endpoint_host()}"
 
 
+class PinLockout(models.Model):
+    """Consecutive failed-PIN counter for one ``(person, ip_address)`` pair.
+
+    The store of record for #14 (PIN brute-force protection). A DB row is used
+    rather than the cache because the default ``LocMemCache`` is per-process
+    (each gunicorn worker has its own), is wiped on every restart/deploy, and
+    gives no admin visibility -- a row is shared across workers, durable across
+    restarts, and admin-listable.
+
+    A row with ``person = NULL`` is the per-IP ceiling row for that IP: it
+    counts failures from that IP across every person. Rows are written only by
+    :mod:`chores.auth`.
+    """
+
+    person = models.ForeignKey(
+        Person,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="pin_lockouts",
+    )
+    ip_address = models.GenericIPAddressField()
+    failure_count = models.PositiveIntegerField(default=0)
+    first_failure_at = models.DateTimeField(default=timezone.now)
+    last_failure_at = models.DateTimeField(default=timezone.now)
+    locked_until = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together: ClassVar[list[list[str]]] = [["person", "ip_address"]]
+
+    @property
+    def is_currently_locked(self):
+        return self.locked_until is not None and self.locked_until > timezone.now()
+
+    def __str__(self):
+        who = self.person.name if self.person is not None else "any person"
+        return f"{who} @ {self.ip_address}"
+
+
 class Chore(models.Model):
     class Cadence(models.TextChoices):
         DAILY = "DAILY", "Daily"

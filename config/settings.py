@@ -151,6 +151,16 @@ VAPID_PRIVATE_KEY = env('VAPID_PRIVATE_KEY', default='')
 VAPID_ADMIN_EMAIL = env('VAPID_ADMIN_EMAIL', default='')
 
 
+# PIN brute-force protection (#14)
+# After PIN_LOCKOUT_THRESHOLD consecutive failed sign-ins for one
+# (person, REMOTE_ADDR) pair within PIN_LOCKOUT_WINDOW seconds, that pair is
+# locked for the rest of the window; PIN_LOCKOUT_IP_THRESHOLD failures from one
+# IP across all persons locks the whole IP. Set a threshold to 0 to disable it.
+PIN_LOCKOUT_THRESHOLD = env.int('PIN_LOCKOUT_THRESHOLD', default=5)
+PIN_LOCKOUT_IP_THRESHOLD = env.int('PIN_LOCKOUT_IP_THRESHOLD', default=20)
+PIN_LOCKOUT_WINDOW = env.int('PIN_LOCKOUT_WINDOW', default=900)
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 

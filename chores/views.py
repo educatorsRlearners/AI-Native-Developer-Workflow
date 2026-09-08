@@ -18,7 +18,14 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from chores import recurrence
-from chores.auth import get_current_person, require_person
+from chores.auth import (
+    clear_login_failures,
+    get_current_person,
+    login_is_locked,
+    record_login_failure,
+    require_person,
+    run_dummy_pin_check,
+)
 from chores.models import Chore, Completion, Person, PushSubscription
 from chores.services import last_completed_on
 
@@ -113,6 +120,9 @@ def offline(request):
     return render(request, "chores/offline.html")
 
 LOGIN_ERROR = "That didn't match, try again"
+# Shown when the pair/IP is in a lockout cooldown. One combined generic message:
+# it names neither the person, the field, nor the exact remaining time.
+LOGIN_LOCKED_ERROR = f"{LOGIN_ERROR} Too many attempts, try again later."
 
 
 def _safe_next(request, raw_next):
@@ -142,12 +152,9 @@ def login(request):
     pin = request.POST.get("pin", "")
 
     person = Person.objects.filter(pk=person_id).first() if person_id else None
-    ok = (
-        person is not None
-        and is_password_usable(person.pin_hash)
-        and person.check_pin(pin)
-    )
-    if not ok:
+    client_ip = request.META.get("REMOTE_ADDR") or "0.0.0.0"
+
+    def _reject(error):
         return render(
             request,
             "chores/login.html",
@@ -155,11 +162,28 @@ def login(request):
                 "people": people,
                 "next": raw_next,
                 "selected_person_id": person_id,
-                "error": LOGIN_ERROR,
+                "error": error,
             },
             status=200,
         )
 
+    # Refuse a locked pair/IP before the PIN is looked at: a correct PIN during
+    # lockout still does not sign in. Spend an equivalent hash comparison so the
+    # locked path's latency matches the wrong-PIN path.
+    if login_is_locked(person, client_ip):
+        run_dummy_pin_check()
+        return _reject(LOGIN_LOCKED_ERROR)
+
+    ok = (
+        person is not None
+        and is_password_usable(person.pin_hash)
+        and person.check_pin(pin)
+    )
+    if not ok:
+        record_login_failure(person, client_ip)
+        return _reject(LOGIN_ERROR)
+
+    clear_login_failures(person, client_ip)
     request.session["person_id"] = person.id
     request.session.cycle_key()
     request._current_person = person
