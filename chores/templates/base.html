@@ -1,0 +1,45 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Chores{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'chores/chores.css' %}">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#4a6fa5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="{% static 'chores/icons/apple-touch-icon-180.png' %}">
+</head>
+<body>
+  <header>
+    <h1>Household Chores</h1>
+    {% if current_person %}
+      <span class="current-person">{{ current_person.name }}</span>
+      <a href="{% url 'chores:settings' %}" class="settings-link">Settings</a>
+      <form method="post" action="{% url 'chores:logout' %}" class="sign-out">
+        {% csrf_token %}
+        <button type="submit">Sign out</button>
+      </form>
+    {% else %}
+      <a href="{% url 'chores:login' %}" class="sign-in-link">Sign in</a>
+    {% endif %}
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <p>Household chore tool</p>
+  </footer>
+  <script>
+    // Register the hand-written service worker once the page has loaded.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function (err) {
+          console.error('Service worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

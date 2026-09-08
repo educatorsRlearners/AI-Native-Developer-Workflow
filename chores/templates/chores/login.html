@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block content %}
+<section class="sign-in">
+  <h2>Sign in</h2>
+
+  {% if error %}
+    <p class="form-error">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="{% url 'chores:login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <label for="person_id">Who are you?</label>
+    <select name="person_id" id="person_id">
+      {% for person in people %}
+        <option value="{{ person.id }}"
+          {% if person.id|stringformat:"s" == selected_person_id %}selected{% endif %}>
+          {{ person.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label for="pin">PIN</label>
+    <input type="password" inputmode="numeric" name="pin" id="pin" value="">
+
+    <button type="submit">Sign in</button>
+  </form>
+</section>
+{% endblock %}

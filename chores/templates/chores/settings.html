@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+  <h2>Settings</h2>
+
+  <section class="notifications-settings">
+    <h3>Browser notifications</h3>
+    <p>
+      Turn on notifications to be nagged about chores on this device. Each
+      browser is enabled separately.
+    </p>
+
+    {# The VAPID public key is safe to send to the browser; the private key is #}
+    {# never rendered here. push.js reads the key and the endpoint from the #}
+    {# button's data attributes. #}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <button
+      type="button"
+      id="enable-notifications"
+      data-vapid-key="{{ vapid_public_key }}"
+      data-subscribe-url="{% url 'chores:push-subscribe' %}"
+    >Enable notifications</button>
+  </section>
+
+  <script src="{% static 'chores/push.js' %}" defer></script>
+{% endblock %}

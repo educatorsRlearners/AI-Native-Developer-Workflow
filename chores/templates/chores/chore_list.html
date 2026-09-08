@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Chores{% endblock %}
+
+{% block content %}
+<section class="chore-groups">
+  {% if not has_chores %}
+    <p class="empty">No chores yet</p>
+  {% else %}
+    {% for group in groups %}
+      <section class="chore-group">
+        <h2>{{ group.heading }}</h2>
+        <ul class="chore-list">
+          {% for row in group.rows %}
+            <li class="chore-row">
+              <span class="chore-title">{{ row.title }}</span>
+              <span class="chore-cadence">{{ row.cadence_label }}</span>
+              <span class="chore-last">
+                Last done:
+                {% if row.last_completed %}{{ row.last_completed }}{% else %}Never{% endif %}
+              </span>
+              <span class="chore-due">Next due: {{ row.next_due }}</span>
+              {% if row.is_overdue %}
+                <span class="status status-overdue">Overdue</span>
+              {% elif row.is_due_today %}
+                <span class="status status-due-today">Due today</span>
+              {% endif %}
+              {% if row.claimed_by_name %}
+                <span class="chore-claim">Claimed by {{ row.claimed_by_name }}</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  {% endif %}
+</section>
+
+<section class="recent-activity">
+  <h2>Recent activity</h2>
+  {% if activity %}
+    <ul class="activity-list">
+      {% for item in activity %}
+        <li class="activity-row">
+          {{ item.chore_title }} &mdash; {{ item.person_name }}
+          &mdash; {{ item.completed_at }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">Nothing done yet</p>
+  {% endif %}
+</section>
+{% endblock %}

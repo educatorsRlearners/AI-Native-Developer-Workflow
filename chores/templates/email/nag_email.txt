@@ -1,0 +1,7 @@
+Hi {{ person.name }},
+
+These chores need doing:
+{% for chore in chores %}- {{ chore.title }} (next due {{ chore.next_due|date:"Y-m-d" }})
+{% endfor %}
+Thanks,
+The chores robot
